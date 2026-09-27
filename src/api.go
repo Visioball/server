@@ -99,7 +99,7 @@ func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool
 	return b, true
 }
 
-func validURL(raw string, local bool) bool {
+func validURL(raw string) bool {
 	if utf8.RuneCountInString(raw) > 2048 || strings.IndexFunc(raw, unicode.IsSpace) >= 0 {
 		return false
 	}
@@ -107,7 +107,7 @@ func validURL(raw string, local bool) bool {
 	if err != nil || u.Hostname() == "" || u.User != nil {
 		return false
 	}
-	return u.Scheme == "https" || (local && u.Scheme == "http" && (u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1" || u.Hostname() == "::1"))
+	return u.Scheme == "https" || u.Scheme == "http"
 }
 
 // Walk tokens so duplicate keys cannot silently overwrite earlier values.
@@ -190,8 +190,8 @@ func (s *server) create(w http.ResponseWriter, r *http.Request) {
 	}
 	if v, exists := fields["imageUrl"]; exists && string(v) != "null" {
 		var u string
-		if json.Unmarshal(v, &u) != nil || !validURL(u, s.localHTTP) {
-			problem(w, 422, "Image URL must be an absolute HTTPS URL without credentials or whitespace.", "/imageUrl")
+		if json.Unmarshal(v, &u) != nil || !validURL(u) {
+			problem(w, 422, "Image URL must be an absolute HTTP or HTTPS URL without credentials or whitespace.", "/imageUrl")
 			return
 		}
 		g.ImageURL = &u

@@ -24,7 +24,6 @@ type server struct {
 	db                *sql.DB
 	objects           *minio.Client
 	bucket, publicURL string
-	localHTTP         bool
 	uploads           chan struct{}
 }
 
@@ -72,9 +71,9 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	s := &server{db: db, objects: objects, bucket: env("S3_BUCKET", "visioball"), publicURL: strings.TrimRight(env("S3_PUBLIC_URL", "http://localhost:9000/visioball"), "/"), localHTTP: os.Getenv("ALLOW_LOCAL_HTTP") == "true", uploads: make(chan struct{}, 2)}
-	if !validURL(s.publicURL, s.localHTTP) || len(s.publicURL) > 1900 {
-		return errors.New("S3_PUBLIC_URL must be an absolute HTTPS URL (or enable ALLOW_LOCAL_HTTP for loopback HTTP)")
+	s := &server{db: db, objects: objects, bucket: env("S3_BUCKET", "visioball"), publicURL: strings.TrimRight(env("S3_PUBLIC_URL", "http://localhost:9000/visioball"), "/"), uploads: make(chan struct{}, 2)}
+	if !validURL(s.publicURL) || len(s.publicURL) > 1900 {
+		return errors.New("S3_PUBLIC_URL must be an absolute HTTP or HTTPS URL")
 	}
 	// The dedicated demo bucket must already exist. Grant only anonymous object reads.
 	policy, _ := json.Marshal(map[string]any{"Version": "2012-10-17", "Statement": []any{map[string]any{"Effect": "Allow", "Principal": "*", "Action": []string{"s3:GetObject"}, "Resource": []string{"arn:aws:s3:::" + s.bucket + "/*"}}}})
