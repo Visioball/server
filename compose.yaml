@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: visioball
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-visioball}
+      POSTGRES_DB: visioball
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visioball -d visioball"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  alarik:
+    image: ghcr.io/achtungsoftware/alarik
+    environment:
+      API_BASE_URL: http://localhost:9000
+      CONSOLE_BASE_URL: http://localhost:3000
+      ADMIN_USERNAME: visioball
+      ADMIN_PASSWORD: ${ALARIK_ADMIN_PASSWORD:-visioball-local-admin}
+      JWT: ${ALARIK_JWT:-local-demo-only-change-before-deployment-2026}
+      DEFAULT_ACCESS_KEY: ${S3_ACCESS_KEY:-visioball}
+      DEFAULT_SECRET_KEY: ${S3_SECRET_KEY:-visioball-local-secret}
+      DEFAULT_BUCKETS: visioball
+      ALARIK_REGION: us-east-1
+      ALLOW_ACCOUNT_CREATION: "false"
+    ports:
+      - "127.0.0.1:9000:8080"
+    volumes:
+      - alarik-data:/app/Storage
+volumes:
+  db-data:
+  alarik-data:
